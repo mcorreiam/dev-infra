@@ -12,3 +12,14 @@ dist/
 
 # SO
 .DS_Store
+
+# Projetos-irmaos: se este repo for clonado em ~/projects, cada projeto
+# criado pelo new-project.sh vive ao lado e NAO deve ser commitado aqui.
+# Apenas os arquivos da infra sao versionados.
+/*
+!/.gitignore
+!/README.md
+!/bootstrap.sh
+!/new-project.sh
+!/infra/
+!/projeto-exemplo/
