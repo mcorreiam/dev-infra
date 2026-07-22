@@ -1,0 +1,39 @@
+name: exemplo
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend/src:/app
+    environment:
+      DATABASE_URL: postgresql://dev:dev@infra-postgres:5432/${PROJECT_DB:-exemplo_db}
+      REDIS_URL: redis://infra-redis:6379
+      MONGO_URL: mongodb://dev:dev@infra-mongo:27017/${PROJECT_DB:-exemplo_db}
+    networks:
+      - dev-shared
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend/src:/app/src
+    environment:
+      API_URL: http://backend:8000
+    networks:
+      - dev-shared
+    depends_on:
+      - backend
+
+networks:
+  dev-shared:
+    external: true
+    name: dev-shared

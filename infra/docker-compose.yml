@@ -1,0 +1,99 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: infra-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - dev-pgdata:/var/lib/postgresql/data
+    networks:
+      - dev-shared
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: infra-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - dev-redisdata:/data
+    networks:
+      - dev-shared
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    container_name: infra-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-dev}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-dev}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - dev-mongodata:/data/db
+    networks:
+      - dev-shared
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh -u $${MONGO_INITDB_ROOT_USERNAME} -p $${MONGO_INITDB_ROOT_PASSWORD} --quiet --eval 'db.adminCommand({ping: 1}).ok' | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: infra-redis-gui
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: "local:infra-redis:6379"
+    ports:
+      - "${REDIS_GUI_PORT:-8081}:8081"
+    networks:
+      - dev-shared
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  mongo-express:
+    image: mongo-express:1-20
+    container_name: infra-mongo-gui
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER:-dev}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD:-dev}
+      ME_CONFIG_MONGODB_URL: "mongodb://${MONGO_USER:-dev}:${MONGO_PASSWORD:-dev}@infra-mongo:27017/"
+      ME_CONFIG_BASICAUTH: "false"
+    ports:
+      - "${MONGO_GUI_PORT:-8082}:8081"
+    networks:
+      - dev-shared
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+networks:
+  dev-shared:
+    name: dev-shared
+    driver: bridge
+
+volumes:
+  dev-pgdata:
+    name: dev-pgdata
+  dev-redisdata:
+    name: dev-redisdata
+  dev-mongodata:
+    name: dev-mongodata

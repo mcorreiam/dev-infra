@@ -1,0 +1,14 @@
+# Segredos — use .env.example como base
+.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+
+# SO
+.DS_Store
