@@ -87,8 +87,8 @@ services:
 
 networks:
   dev-shared:
+    external: true
     name: dev-shared
-    driver: bridge
 
 volumes:
   dev-pgdata:
