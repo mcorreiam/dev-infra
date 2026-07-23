@@ -56,14 +56,20 @@ else
 fi
 
 # --- 4. Grupo docker ----------------------------------------------------------
-if groups | grep -qw docker; then
-    info "Usuario ja esta no grupo docker"
+if id -nG | grep -qw docker; then
+    info "Usuario ja esta no grupo docker (sessao atual)"
+elif getent group docker | grep -qw "$USER"; then
+    info "Usuario esta no grupo docker, mas a sessao atual nao"
+    echo ""
+    echo ">>> Rode:  exec su - \$USER"
+    echo ">>> Depois: $0"
+    exit 0
 else
     info "Adicionando usuario ao grupo docker"
     sudo usermod -aG docker "$USER"
     echo ""
-    echo ">>> ATENCAO: para usar docker sem sudo, faca logout/login ou rode: newgrp docker"
-    echo ">>> Depois rode novamente: $0"
+    echo ">>> Rode:  exec su - \$USER"
+    echo ">>> Depois: $0"
     exit 0
 fi
 
